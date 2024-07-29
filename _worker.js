@@ -22,6 +22,10 @@ let subconverter = "subapi-loadbalancing.pages.dev"; //在线订阅转换后端�
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini"; //订阅配置文件
 
 let subproxyUrl = "https://cfno1.pages.dev/sub";
+let subproxyUrl = `
+https://cfno1.pages.dev/sub
+https://giii.eu.org/get_data?key=520&region=jp
+`;
 let encodedData = '';
 
 export default {
@@ -53,7 +57,7 @@ export default {
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
 
 		// 获取优选IP端口订阅数据
-		encodedData = await fetchSubscription(subproxyUrl);
+		encodedData = await fetchMultipleSubscriptions(subproxyUrl);
 
 		let 重新汇总所有链接 = await ADD(MainData + '\n' + urls.join('\n'));
 		let 自建节点 ="";
@@ -329,6 +333,23 @@ async function fetchSubscription(url) {
     }
 }
 
+async function fetchMultipleSubscriptions(urls) {
+    try {
+        const urlArray = urls.split('\n'); // 将多行文本转换为数组
+        const results = await Promise.all(urlArray.map(async (url) => {
+            const trimmedUrl = url.trim(); // 去除可能存在的多余空格
+            if (trimmedUrl) {
+                const result = await fetchSubscription(trimmedUrl);
+                return result;
+            }
+            return ''; // 返回空字符串以确保结果数组长度一致
+        }));
+        return results.join('\n'); // 将所有结果拼接成一个字符串
+    } catch (error) {
+        console.error('There has been a problem with your fetch operation:', error);
+    }
+}
+
 function clashFix(content) {
 	if(content.includes('wireguard') && !content.includes('remote-dns-resolve')){
 		let lines;
@@ -378,6 +399,10 @@ function parseIPPort(data) {
     const lines = data.split('\n');
     const ipPortList = lines.map(line => {
         const match = line.match(/@([^:]+):(\d+)(#(.*))?/);
+	if (!match) {
+            // 尝试匹配纯 IP:端口 格式
+            match = line.match(/([^:]+):(\d+)(#(.*))?/);
+        }
         if (match) {
 		if (isValidIPv4(match[1])) {
 			const lastHashIndex = line.lastIndexOf('#');
