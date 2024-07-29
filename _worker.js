@@ -25,7 +25,6 @@ let subproxyUrl = `
 https://cfno1.pages.dev/sub
 https://giii.eu.org/get_data?key=520&region=jp
 `;
-
 let encodedData = '';
 
 export default {
