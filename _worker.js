@@ -397,7 +397,7 @@ function base64Encode(str) {
 function parseIPPort(data) {
     const lines = data.split('\n');
     const ipPortList = lines.map(line => {
-        const match = line.match(/@([^:]+):(\d+)(#(.*))?/);
+        let match = line.match(/@([^:]+):(\d+)(#(.*))?/);
 	if (!match) {
             // 尝试匹配纯 IP:端口 格式
             match = line.match(/([^:]+):(\d+)(#(.*))?/);
