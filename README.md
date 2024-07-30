@@ -93,7 +93,7 @@ vmess://ew0KICAidiI6ICIyIiwNCiAgInBzIjogIuWKoOWFpeaIkeeahOmikemBk3QubWUvQ01MaXVz
 | SUBCONFIG | [https://raw.github.../ACL4SSR_Online_MultiCountry.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini) | clash、singbox等 订阅转换配置文件 | 
 | SUBPROXYURL | https://cfno1.pages.dev/sub | 魔改版本优选IP订阅 | 
 
-
+## SUBPROXYURL 支持多个优选IP订阅，通过换行符分割，请确保每行一个订阅链接
 ## 注意事项
 项目中，TGTOKEN和TGID在使用时需要先到Telegram注册并获取。其中，TGTOKEN是telegram bot的凭证，TGID是用来接收通知的telegram用户或者组的id。
 
