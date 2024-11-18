@@ -334,7 +334,7 @@ async function fetchSubscription(url) {
 
 async function fetchMultipleSubscriptions(urls) {
     try {
-        const urlArray = urls.split('\n'); // 将多行文本转换为数组
+        const urlArray = urls.split('\n').slice(0, 10);
         const results = await Promise.all(urlArray.map(async (url) => {
             const trimmedUrl = url.trim(); // 去除可能存在的多余空格
             if (trimmedUrl) {
