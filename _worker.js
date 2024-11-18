@@ -339,7 +339,8 @@ async function fetchMultipleSubscriptions(urls) {
             const trimmedUrl = url.trim(); // 去除可能存在的多余空格
             if (trimmedUrl) {
                 const result = await fetchSubscription(trimmedUrl);
-                return result;
+                const lines = result.split('\n');
+                return lines.slice(0, 5).join('\n');
             }
             return ''; // 返回空字符串以确保结果数组长度一致
         }));
