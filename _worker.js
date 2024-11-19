@@ -410,7 +410,7 @@ function parseIPPort(data) {
         if (match) {
 		if (isValidIPv4(match[1])) {
 			const lastHashIndex = line.lastIndexOf('#');
-            		let name = lastHashIndex !== -1 ? decodeURIComponent(line.substring(lastHashIndex + 1)) : '';
+            		let name = lastHashIndex !== -1 ? line.substring(lastHashIndex + 1) : '';
             		return { ip: match[1], port: match[2], name };
 		}
         }
