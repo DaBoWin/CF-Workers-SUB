@@ -344,7 +344,7 @@ async function fetchMultipleSubscriptions(urls) {
                     decodedResult = base64Decode(result);
                 }
                 const lines = decodedResult.split('\n');
-                return lines.slice(0, 5).join('\n');
+                return base64Encode(lines.slice(0, 5).join('\n'));
             }
             return ''; // 返回空字符串以确保结果数组长度一致
         }));
