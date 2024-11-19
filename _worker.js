@@ -344,7 +344,7 @@ async function fetchMultipleSubscriptions(urls) {
                     decodedResult = base64Decode(result);
                 }
                 const lines = decodedResult.split('\n');
-                return base64Encode(lines.slice(0, 5).join('\n'));
+                return base64Encode(lines.slice(0, 10).join('\n'));
             }
             return ''; // 返回空字符串以确保结果数组长度一致
         }));
@@ -410,7 +410,7 @@ function parseIPPort(data) {
         if (match) {
 		if (isValidIPv4(match[1])) {
 			const lastHashIndex = line.lastIndexOf('#');
-            		let name = lastHashIndex !== -1 ? line.substring(lastHashIndex + 1) : '';
+            		let name = lastHashIndex !== -1 ? decodeURIComponent(line.substring(lastHashIndex + 1)) : '';
             		return { ip: match[1], port: match[2], name };
 		}
         }
