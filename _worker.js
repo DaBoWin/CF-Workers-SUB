@@ -428,7 +428,7 @@ function isValidIPv4(ip) {
 function replaceVmessIPPort(template, ip, port, newName) {
     // 使用正则表达式获取ps标签的值
     const psMatch = template.match(/"ps":\s*"(.*?)"/);
-    const originalName = psMatch ? psMatch[1] : '';
+    const originalName = psMatch ? decodeURIComponent(psMatch[1]) : '';
     const finalName = originalName ? `${originalName}|${newName}` : newName;
     
     const replacedTemplate = template
@@ -442,7 +442,7 @@ function replaceVmessIPPort(template, ip, port, newName) {
 // 替换vless链接中的IP和端口，并在原有名称基础上增加新的名称
 function replaceVlessIPPort(template, ip, port, newName) {
     const originalNameMatch = template.match(/#(.*)$/);
-    const originalName = originalNameMatch ? originalNameMatch[1] : '';
+    const originalName = originalNameMatch ? decodeURIComponent(originalNameMatch[1]) : '';
     const finalName = originalName ? `${originalName}|${newName}` : newName;
     return template.replace(/@[^:]+:\d+/, `@${ip}:${port}`).replace(/#.*$/, `#${finalName}`);
 }
