@@ -58,14 +58,9 @@ export default {
 		encodedData = await fetchMultipleSubscriptions(subproxyUrl);
 
 		if (url.pathname === "/debug") {
-			let decoded = '';
-			try {
-				decoded = encodedData ? base64Decode(encodedData.trim()) : '';
-			} catch (e) {
-				decoded = '';
-			}
-			const lines = decoded ? normalizeLines(decoded) : [];
-			const ipPortList = decoded ? parseIPPort(lines.join('\n')) : [];
+			const decodedCombined = decodeAggregatedData(encodedData);
+			const lines = decodedCombined ? normalizeLines(decodedCombined) : [];
+			const ipPortList = decodedCombined ? parseIPPort(lines.join('\n')) : [];
 			let 重新汇总所有链接_调试 = await ADD(MainData + '\n' + (urls && urls.length ? urls.join('\n') : ''));
 			let 调试替换结果 = [];
 			const additionalName = "@bestvpschat";
@@ -459,7 +454,13 @@ function isBase64(str) {
 // Base64编码函数
 function base64Encode(str) {
     try {
-        return btoa(str);
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(str);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
     } catch (error) {
         console.error('There has been a problem with your Base64 encoding operation:', error);
     }
@@ -474,6 +475,22 @@ function normalizeLines(text) {
     // 仅保留包含 ":<port>" 的候选
     const candidates = tokens.filter(t => /:\d+/.test(t));
     return candidates;
+}
+
+// 解聚合的 encodedData，兼容多段 base64 逐行拼接
+function decodeAggregatedData(data) {
+    if (!data) return '';
+    const parts = data.split('\n').filter(Boolean);
+    let combined = '';
+    for (const part of parts) {
+        let segment = part;
+        if (isBase64(part)) {
+            try { segment = base64Decode(part); } catch (e) { /* ignore */ }
+        }
+        if (combined) combined += '\n';
+        combined += segment;
+    }
+    return combined;
 }
 
 // 解析IP、端口和名称信息
@@ -546,7 +563,7 @@ function getEncodedNewLinks(templateLink, additionalName) {
     }
 
     if (encodedData) {
-        const decodedData = base64Decode(encodedData.trim());
+        const decodedData = decodeAggregatedData(encodedData);
         if (decodedData) {
             const ipPortList = parseIPPort(decodedData);
             ipPortList.forEach(({ ip, port, name }) => {
