@@ -23,6 +23,7 @@ let subproxyUrl = `
 https://yu.qqyy.qzz.io/yuu
 `;
 let encodedData = '';
+let lastDebugInfo = [];
 
 export default {
 	async fetch (request,env) {
@@ -53,6 +54,7 @@ export default {
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
 
 		// 获取优选IP端口订阅数据
+		lastDebugInfo = [];
 		encodedData = await fetchMultipleSubscriptions(subproxyUrl);
 
 		if (url.pathname === "/debug") {
@@ -80,10 +82,13 @@ export default {
 
 			const ipListPreview = ipPortList.slice(0, 100).map((x, i) => `${i+1}. ${x.ip}:${x.port}${x.name ? ' #' + x.name : ''}`).join('\n');
 			const replacePreview = 调试替换结果.slice(0, 100).join('\n');
+			const sourceDebug = lastDebugInfo && lastDebugInfo.length ? lastDebugInfo.map((d, i) => `${i+1}. URL: ${d.url}\n   ok=${d.ok} status=${d.status} length=${d.length}${d.ct ? ` ct=${d.ct}` : ''}${d.base64!==undefined ? ` base64=${d.base64}` : ''}${d.error ? `\n   error=${d.error}` : ''}${d.sample ? `\n   sample=${d.sample}` : ''}`).join('\n\n') : '无';
 			const html = `<!doctype html><html><head><meta charset="utf-8"><title>CF-Workers-SUB Debug</title><style>body{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;padding:16px;line-height:1.4} pre{background:#f6f8fa;padding:12px;overflow:auto;border-radius:6px} h2{margin-top:24px}</style></head><body>
 			<h1>Debug</h1>
 			<div>SUBPROXYURL 源: <pre>${(subproxyUrl || '').toString().replace(/</g,'&lt;')}</pre></div>
 			<div>抓取结果（解码后）行数: ${lines.length}</div>
+			<h2>源抓取状态</h2>
+			<pre>${sourceDebug}</pre>
 			<h2>解析到的 IPv4:端口 (前100条)</h2>
 			<pre>${ipListPreview || '无'}</pre>
 			<h2>替换结果 (前100条)</h2>
@@ -367,16 +372,44 @@ async function fetchSubscription(url) {
     }
 }
 
+async function fetchSubscriptionDebug(url) {
+    const info = { url, ok: false, status: 0, ct: '', length: 0, base64: undefined, sample: '', error: '' };
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/plain, text/*, */*;q=0.1',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'User-Agent': 'CF-Workers-SUB Debug/1.0'
+            }
+        });
+        info.status = response.status;
+        info.ct = response.headers.get('content-type') || '';
+        const text = await response.text();
+        info.length = text.length;
+        info.ok = response.ok;
+        try { info.base64 = isBase64(text); } catch (e) { info.base64 = false; }
+        info.sample = text.slice(0, 200).replace(/\n/g, ' ');
+        return { info, text };
+    } catch (error) {
+        info.error = String(error && error.message ? error.message : error);
+        return { info, text: '' };
+    }
+}
+
 async function fetchMultipleSubscriptions(urls) {
     try {
         const urlArray = urls.split('\n').slice(0, 10);
         const results = await Promise.all(urlArray.map(async (url) => {
             const trimmedUrl = url.trim(); // 去除可能存在的多余空格
             if (trimmedUrl) {
-                const result = await fetchSubscription(trimmedUrl);
-                let decodedResult = result;
-                if (isBase64(result)) {
-                    decodedResult = base64Decode(result);
+                const { info, text } = await fetchSubscriptionDebug(trimmedUrl);
+                (lastDebugInfo || (lastDebugInfo = [])).push(info);
+                if (!info.ok || !text) return '';
+                let decodedResult = text;
+                if (isBase64(text)) {
+                    decodedResult = base64Decode(text);
                 }
                 const lines = decodedResult.split('\n');
                 return base64Encode(lines.slice(0, 100).join('\n'));
