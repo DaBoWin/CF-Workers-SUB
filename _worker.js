@@ -24,6 +24,7 @@ https://yu.qqyy.qzz.io/yuu
 `;
 let encodedData = '';
 let lastDebugInfo = [];
+let subdomains = '';
 
 export default {
 	async fetch (request,env) {
@@ -41,6 +42,7 @@ export default {
 		MainData = env.LINK || MainData;
 		if(env.LINKSUB) urls = await ADD(env.LINKSUB);
 		subproxyUrl = env.SUBPROXYURL || subproxyUrl;
+		subdomains = env.SUBDOMAIN || subdomains;
 
 		const currentDate = new Date();
 		currentDate.setHours(0, 0, 0, 0); 
@@ -64,12 +66,21 @@ export default {
 			let 重新汇总所有链接_调试 = await ADD(MainData + '\n' + (urls && urls.length ? urls.join('\n') : ''));
 			let 调试替换结果 = [];
 			const additionalName = "@bestvpschat";
+			const domains_debug = subdomains ? await ADD(subdomains) : [];
 			for (let x of 重新汇总所有链接_调试) {
 				if (!x.toLowerCase().startsWith('http')) {
 					const newLinks = getEncodedNewLinks(x, additionalName);
 					if (newLinks && newLinks.length) {
 						for (const n of newLinks) {
 							调试替换结果.push(n);
+						}
+					}
+				}
+				if (domains_debug && domains_debug.length) {
+					const domLinks = getDomainNewLinks(x, domains_debug, additionalName);
+					if (domLinks && domLinks.length) {
+						for (const d of domLinks) {
+							调试替换结果.push(d);
 						}
 					}
 				}
@@ -96,6 +107,7 @@ export default {
 		let 重新汇总所有链接 = await ADD(MainData + '\n' + urls.join('\n'));
 		let 自建节点 ="";
 		let 订阅链接 ="";
+		const domains = subdomains ? await ADD(subdomains) : [];
 		for (let x of 重新汇总所有链接) {
 			if (x.toLowerCase().startsWith('http')) {
 				订阅链接 += x + '\n';
@@ -110,6 +122,14 @@ export default {
 				   });
 				} else {
 				   自建节点 += x + '\n';
+				}
+
+				// 基于 SUBDOMAIN 的域名替换，端口固定 443
+				if (domains && domains.length) {
+					const domLinks = getDomainNewLinks(x, domains, additionalName);
+					if (domLinks && domLinks.length) {
+						domLinks.forEach(dl => { 自建节点 += dl + '\n'; });
+					}
 				}
 				
 				//自建节点 += x + '\n';
@@ -539,7 +559,7 @@ function replaceVlessIPPort(template, ip, port, newName) {
     const originalNameMatch = template.match(/#(.*)$/);
     const originalName = originalNameMatch ? decodeURIComponent(originalNameMatch[1]) : '';
     const finalName = originalName ? `${originalName}|${newName}` : newName;
-    return template.replace(/@[^:]+:\d+/, `@${ip}:${port}`).replace(/#.*$/, `#${finalName}`);
+    return template.replace(/@[^:]+:\d+/, `@${ip}:${port}`).replace(/#.*/, `#${finalName}`);
 }
 
 // 获取encodedNewLinks的方法
@@ -580,6 +600,58 @@ function getEncodedNewLinks(templateLink, additionalName) {
             });
         }
     }
+
+    return newLinks;
+}
+
+// 提取域名（去除协议与路径）
+function extractHostname(input) {
+    try {
+        if (/^https?:\/\//i.test(input)) {
+            const u = new URL(input);
+            return u.hostname;
+        }
+        // 去除可能携带的路径/端口
+        return input.split('/')[0].split(':')[0].trim();
+    } catch (e) {
+        return input;
+    }
+}
+
+// 基于域名列表生成替换链接（端口固定 443）
+function getDomainNewLinks(templateLink, domains, additionalName) {
+    const newLinks = [];
+
+    // 判断是vmess还是vless链接
+    const isVmess = templateLink.startsWith("vmess://");
+    const isVless = templateLink.startsWith("vless://");
+
+    // 去掉前缀
+    if (isVmess) {
+        templateLink = templateLink.slice(8);
+    } else if (isVless) {
+        templateLink = templateLink.slice(8);
+    }
+
+    // 判断templateLink是否为Base64编码并进行解码（仅针对vmess）
+    if (isVmess && isBase64(templateLink)) {
+        templateLink = base64Decode(templateLink);
+    }
+
+    domains.forEach(d => {
+        const host = extractHostname(d);
+        if (!host) return;
+        const port = '443';
+        let newLink;
+        if (isVmess) {
+            newLink = replaceVmessIPPort(templateLink, host, port, additionalName);
+            const encodedNewLink = base64Encode(newLink);
+            newLinks.push(`vmess://${encodedNewLink}`);
+        } else if (isVless) {
+            newLink = replaceVlessIPPort(templateLink, host, port, additionalName);
+            newLinks.push(`vless://${newLink}`);
+        }
+    });
 
     return newLinks;
 }
