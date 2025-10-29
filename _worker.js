@@ -64,8 +64,8 @@ export default {
 			} catch (e) {
 				decoded = '';
 			}
-			const lines = decoded ? decoded.split('\n') : [];
-			const ipPortList = decoded ? parseIPPort(decoded) : [];
+			const lines = decoded ? normalizeLines(decoded) : [];
+			const ipPortList = decoded ? parseIPPort(lines.join('\n')) : [];
 			let 重新汇总所有链接_调试 = await ADD(MainData + '\n' + (urls && urls.length ? urls.join('\n') : ''));
 			let 调试替换结果 = [];
 			const additionalName = "@bestvpschat";
@@ -411,8 +411,8 @@ async function fetchMultipleSubscriptions(urls) {
                 if (isBase64(text)) {
                     decodedResult = base64Decode(text);
                 }
-                const lines = decodedResult.split('\n');
-                return base64Encode(lines.slice(0, 100).join('\n'));
+                const tokens = normalizeLines(decodedResult);
+                return base64Encode(tokens.slice(0, 100).join('\n'));
             }
             return ''; // 返回空字符串以确保结果数组长度一致
         }));
@@ -465,6 +465,16 @@ function base64Encode(str) {
     }
 }
 
+
+// 规范化订阅内容为逐行的 IP:端口[#名称]
+function normalizeLines(text) {
+    if (!text) return [];
+    // 统一换行符，然后按空白/逗号切分，过滤空条目
+    const tokens = text.replace(/\r/g, '\n').split(/[\s,]+/).filter(Boolean);
+    // 仅保留包含 ":<port>" 的候选
+    const candidates = tokens.filter(t => /:\d+/.test(t));
+    return candidates;
+}
 
 // 解析IP、端口和名称信息
 function parseIPPort(data) {
