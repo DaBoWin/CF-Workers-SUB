@@ -12,9 +12,7 @@ let timestamp = 4102329600000;//2099-12-31
 
 //节点链接 + 订阅链接
 let MainData = `
-vless://b7a392e2-4ef0-4496-90bc-1c37bb234904@cf.090227.xyz:443?encryption=none&security=tls&sni=edgetunnel-2z2.pages.dev&fp=random&type=ws&host=edgetunnel-2z2.pages.dev&path=%2F%3Fed%3D2048#%E5%8A%A0%E5%85%A5%E6%88%91%E7%9A%84%E9%A2%91%E9%81%93t.me%2FCMLiussss%E8%A7%A3%E9%94%81%E6%9B%B4%E5%A4%9A%E4%BC%98%E9%80%89%E8%8A%82%E7%82%B9
-https://sub.xf.free.hr/auto
-https://WARP.fxxk.dedyn.io/auto
+vmess://ew0KICAidiI6ICIyIiwNCiAgInBzIjogIm9yYS1zZy12bS1iMHpyZnJwYiIsDQogICJhZGQiOiAib3Jhc2cuZWN1cC5ueWMubW4iLA0KICAicG9ydCI6ICI0NDMiLA0KICAiaWQiOiAiMmUyMzUyNTgtNTYxYS00ZjE5LTkwZTAtMzM2ZjgwYWM5MzQ1IiwNCiAgImFpZCI6ICIwIiwNCiAgInNjeSI6ICJhdXRvIiwNCiAgIm5ldCI6ICJ3cyIsDQogICJ0eXBlIjogIm5vbmUiLA0KICAiaG9zdCI6ICJvcmFzZy5lY3VwLm55Yy5tbiIsDQogICJwYXRoIjogIi8/ZWQ9MjA0OCIsDQogICJ0bHMiOiAidGxzIiwNCiAgInNuaSI6ICJvcmFzZy5lY3VwLm55Yy5tbiIsDQogICJhbHBuIjogIiIsDQogICJmcCI6ICIiDQp9
 `
 
 let urls = [];
@@ -22,8 +20,7 @@ let subconverter = "subapi-loadbalancing.pages.dev"; //在线订阅转换后端�
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini"; //订阅配置文件
 
 let subproxyUrl = `
-https://cfno1.pages.dev/sub
-https://giii.eu.org/get_data?key=520&region=jp
+https://yu.qqyy.qzz.io/yuu
 `;
 let encodedData = '';
 
@@ -57,6 +54,44 @@ export default {
 
 		// 获取优选IP端口订阅数据
 		encodedData = await fetchMultipleSubscriptions(subproxyUrl);
+
+		if (url.pathname === "/debug") {
+			let decoded = '';
+			try {
+				decoded = encodedData ? base64Decode(encodedData.trim()) : '';
+			} catch (e) {
+				decoded = '';
+			}
+			const lines = decoded ? decoded.split('\n') : [];
+			const ipPortList = decoded ? parseIPPort(decoded) : [];
+			let 重新汇总所有链接_调试 = await ADD(MainData + '\n' + (urls && urls.length ? urls.join('\n') : ''));
+			let 调试替换结果 = [];
+			const additionalName = "@bestvpschat";
+			for (let x of 重新汇总所有链接_调试) {
+				if (!x.toLowerCase().startsWith('http')) {
+					const newLinks = getEncodedNewLinks(x, additionalName);
+					if (newLinks && newLinks.length) {
+						for (const n of newLinks) {
+							调试替换结果.push(n);
+						}
+					}
+				}
+			}
+
+			const ipListPreview = ipPortList.slice(0, 100).map((x, i) => `${i+1}. ${x.ip}:${x.port}${x.name ? ' #' + x.name : ''}`).join('\n');
+			const replacePreview = 调试替换结果.slice(0, 100).join('\n');
+			const html = `<!doctype html><html><head><meta charset="utf-8"><title>CF-Workers-SUB Debug</title><style>body{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;padding:16px;line-height:1.4} pre{background:#f6f8fa;padding:12px;overflow:auto;border-radius:6px} h2{margin-top:24px}</style></head><body>
+			<h1>Debug</h1>
+			<div>SUBPROXYURL 源: <pre>${(subproxyUrl || '').toString().replace(/</g,'&lt;')}</pre></div>
+			<div>抓取结果（解码后）行数: ${lines.length}</div>
+			<h2>解析到的 IPv4:端口 (前100条)</h2>
+			<pre>${ipListPreview || '无'}</pre>
+			<h2>替换结果 (前100条)</h2>
+			<div>总计: ${调试替换结果.length}</div>
+			<pre>${replacePreview || '无'}</pre>
+			</body></html>`;
+			return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+		}
 
 		let 重新汇总所有链接 = await ADD(MainData + '\n' + urls.join('\n'));
 		let 自建节点 ="";
